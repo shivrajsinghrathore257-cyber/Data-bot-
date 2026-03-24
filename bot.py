@@ -14,15 +14,14 @@ def run_flask():
     app.run(host='0.0.0.0', port=8080)
 
 # --- Bot Configuration ---
-BOT_TOKEN = "8667049229:AAHL-Q-dXudxIYOFtgawcvGmDIKrGg22KM8" # <--- Apna Token Yaha Dalein
+BOT_TOKEN = "8667049229:AAHL-Q-dXudxIYOFtgawcvGmDIKrGg22KM8"
 bot = telebot.TeleBot(BOT_TOKEN)
 
 # Links
 OFFER_LINK = "https://shivrajsinghrathore257-cyber.github.io/Vip-offer/"
 RACE_LINK = "https://www.hvqzf09xs80rl27.com/#/register?invitationCode=32775781092"
-CONTACT_MSG = "📢 PURI DETAILS KE LIYE MESSAGE KRE\n👤 @SR_NOTES8"
 
-# User Tracking (Note: Server restart hone par ye reset ho jayega)
+# User Tracking
 used_users = set()
 
 # Deletion Function
@@ -30,10 +29,22 @@ def delete_msg(chat_id, msg_id, delay):
     time.sleep(delay)
     try:
         bot.delete_message(chat_id, msg_id)
+        print(f"✅ Deleted message {msg_id}")
     except:
         pass
 
-# --- Start Command Logic ---
+# Permanent Message Formatting
+PERMANENT_MSG = """<b>📢 हमारे चैनल में हम ज्यादा members नहीं रखते!</b>
+
+<b>हम सिर्फ 50 लोगों को ही select करेंगे।</b>
+
+<b>सभी मिलकर analysis करेंगे कि आगे क्या आने वाला है.</b>
+
+<b>✅ FREE TRIAL USE करना है तो:</b> <b>YES मैसेज करें</b>
+
+👤 संपर्क: @SR_NOTES8"""
+
+# --- Start Command ---
 @bot.message_handler(commands=['start'])
 def handle_start(message):
     user_id = message.chat.id
@@ -44,38 +55,44 @@ def handle_start(message):
 
     used_users.add(user_id)
     
-    # 1. Contact Message
-    bot.send_message(user_id, CONTACT_MSG)
-    
-    # 2. 1 Second Gap
+    # 1. Permanent Message
+    bot.send_message(user_id, PERMANENT_MSG, parse_mode='HTML')
     time.sleep(1)
     
-    # 3. Offer Link Message
-    link_text = f"CLICK HERE 🔗 {OFFER_LINK}"
-    msg = bot.send_message(user_id, link_text)
+    # 2. Expiring Link Message
+    link_text = f"<b>🔥 VIP OFFER 🔥</b>\n\n👉 {OFFER_LINK}\n\n<i>⚠️ यह लिंक 62 सेकंड में गायब हो जाएगा!</i>"
+    msg = bot.send_message(user_id, link_text, parse_mode='HTML')
     
-    # 4. 62 Seconds Deletion
-    threading.Thread(target=delete_msg, args=(user_id, msg.message_id, 62)).start()
+    t = threading.Thread(target=delete_msg, args=(user_id, msg.message_id, 62))
+    t.daemon = True
+    t.start()
 
 # --- Hidden Commands ---
 @bot.message_handler(commands=['chiku'])
 def handle_chiku(message):
     user_id = message.chat.id
-    msg = bot.send_message(user_id, f"🚀 VIP OFFER:\n{OFFER_LINK}")
-    threading.Thread(target=delete_msg, args=(user_id, msg.message_id, 60)).start()
+    link_text = f"<b>🚀 VIP OFFER</b>\n\n👉 {OFFER_LINK}\n\n<i>⚠️ यह लिंक 62 सेकंड में गायब हो जाएगा!</i>"
+    msg = bot.send_message(user_id, link_text, parse_mode='HTML')
+    
+    t = threading.Thread(target=delete_msg, args=(user_id, msg.message_id, 62))
+    t.daemon = True
+    t.start()
 
 @bot.message_handler(commands=['race'])
 def handle_race(message):
     user_id = message.chat.id
-    msg = bot.send_message(user_id, f"🏁 REGISTRATION:\n{RACE_LINK}")
-    threading.Thread(target=delete_msg, args=(user_id, msg.message_id, 5)).start()
+    msg = bot.send_message(user_id, f"🏁 <b>REGISTRATION LINK</b>\n\n👉 {RACE_LINK}", parse_mode='HTML')
+    
+    t = threading.Thread(target=delete_msg, args=(user_id, msg.message_id, 5))
+    t.daemon = True
+    t.start()
 
 # --- Execution ---
 if __name__ == "__main__":
-    # Flask ko alag thread mein chalao
-    t = threading.Thread(target=run_flask)
-    t.daemon = True
-    t.start()
+    # Flask ko alag thread mein chalao taaki Render active rahe
+    t_flask = threading.Thread(target=run_flask)
+    t_flask.daemon = True
+    t_flask.start()
     
-    print("🤖 Bot is starting on Render...")
+    print("🤖 Bot is starting on GitHub/Render...")
     bot.infinity_polling()
